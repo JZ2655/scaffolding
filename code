@@ -1,0 +1,53 @@
+#import data 
+FourQ <- read.csv("final dataset.csv",header = TRUE)
+str(FourQ)
+length(unique(FourQ$skill_pattern)) #28
+length(unique(FourQ$skill_pattern_id)) #18
+length(unique(FourQ$user_id)) #number of students completed at least one question 492
+
+library(dplyr)
+library(ggplot2)
+################################################################
+# By skill pattern id (skill_pattern_id= "1111","2111","311")
+#taking only 1111,2111,3111
+df.e.sub1<- filter(FourQ,skill_pattern_id=="1111")
+df.e.sub2<- filter(FourQ,skill_pattern_id=="2111")
+df.e.sub3<- filter(FourQ,skill_pattern_id=="3111")
+df.e.sub <- rbind(df.e.sub1,df.e.sub2,df.e.sub3)
+# assistment line
+df.a <- df.e.sub%>% group_by(skill_pattern_id,assistment_id,uniqueproblem_id)%>%summarize(mean(correct))
+df.a$uniqueproblem_id <- as.numeric(df.a$uniqueproblem_id)
+colnames(df.a)[4] <- "correct"
+colnames(df.a)[3] <- "problem_id"
+#graph
+ggplot(df.a,aes(problem_id,correct,group=assistment_id))+geom_line()+facet_wrap(~skill_pattern_id)
+#aggregated line
+df.e.sub <- df.e.sub %>% group_by(skill_pattern_id,uniqueproblem_id)%>%summarize(mean=mean(correct),sd=sd(correct),n=dplyr::n_distinct(order_id))
+df.e.sub$se <- (df.e.sub$sd/sqrt(df.e.sub$n))
+df.e.sub$uniqueproblem_id <- as.numeric(df.e.sub$uniqueproblem_id)
+colnames(df.e.sub)[3] <- "correct"
+colnames(df.e.sub)[2] <- "problem_id"
+#graph
+ggplot(df.e.sub,aes(problem_id,correct))+geom_line()+facet_wrap(~skill_pattern_id)+coord_cartesian(ylim = c(0,0.6))+geom_errorbar(aes(ymin=correct-se,ymax=correct+se),width=0.1)
+#############################################################
+# Skill pattern
+#skill pattern (AB-A-A-B, AB-A-B-B, AB-B-B-A, AB-B-B-B)
+df.f.2skills1 <- filter(FourQ, skill_pattern=="AB-A-A-B")
+df.f.2skills2 <- filter(FourQ, skill_pattern=="AB-A-B-B")
+df.f.2skills3 <- filter(FourQ,skill_pattern=="AB-B-B-A")
+df.f.2skills4 <- filter(FourQ,skill_pattern=="AB-B-B-B")
+df.f.2skills <- rbind(df.f.2skills1,df.f.2skills2,df.f.2skills3,df.f.2skills4)
+#seperated by assistment line
+df.f.2skills.assistment <- df.f.2skills%>% group_by(skill_pattern,assistment_id,uniqueproblem_id)%>%summarize(mean(correct))
+df.f.2skills.assistment$uniqueproblem_id <- as.numeric(df.f.2skills.assistment$uniqueproblem_id)
+colnames(df.f.2skills.assistment)[4] <- "correct"
+colnames(df.f.2skills.assistment)[3] <- "problem_id"
+#graph
+ggplot(df.f.2skills.assistment,aes(problem_id,correct,group=assistment_id))+geom_line()+facet_grid(.~skill_pattern)
+#aggregated 
+df.f.2skills.sub <- df.f.2skills %>% group_by(skill_pattern,uniqueproblem_id)%>%summarize(mean=mean(correct),sd=sd(correct),n=dplyr::n_distinct(order_id))
+df.f.2skills.sub$se <- (df.f.2skills.sub$sd/sqrt(df.f.2skills.sub$n))
+colnames(df.f.2skills.sub)[3] <- "correct"
+df.f.2skills$uniqueproblem_id <- as.numeric(df.f.2skills$uniqueproblem_id)
+colnames(df.f.2skills.sub)[2] <- "problem_id"
+ggplot(df.f.2skills.sub,aes(problem_id,correct))+geom_line()+facet_grid(.~skill_pattern)+coord_cartesian(ylim = c(0,0.6))+geom_errorbar(aes(ymin=correct-se,ymax=correct+se),width=0.1)
